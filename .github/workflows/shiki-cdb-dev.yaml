@@ -20,10 +20,10 @@ on:
     - cloud-run
 
 env:
-  PROJECT_ID: shiki-cdb-staging
-  RUN_REGION: us-east1
-  SERVICE_NAME: phpmyadmin-dev
-  STANCE_ID: shiki-cdb2020-development-v8
+  PROJECT_ID: ${{ secrets.SHIKI_CDB_DEV_PROJECT_ID }}
+  RUN_REGION: ${{ secrets.SHIKI_CDB_DEV_REGION }}
+  SERVICE_NAME: ${{ secrets.SHIKI_CDB_DEV_SERVICE_NAME }}
+  INSTANCE_ID: ${{ secrets.SHIKI_CDB_DEV_INSTANCE_ID }}
 
 jobs:
   setup-build-deploy:
@@ -39,7 +39,6 @@ jobs:
       with:
         version: '290.0.1'
         service_account_key: ${{ secrets.SHIKI_CDB_DEV_SA_KEY }}
-        project_id: $PROJECT_ID
 
     # Build and push image to Google Container Registry
     - name: Build
