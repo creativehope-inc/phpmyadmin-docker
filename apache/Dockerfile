@@ -1,6 +1,6 @@
 FROM php:7.4-apache
 
-COPY ./sites-available-000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY ./sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf
 COPY ./ports.conf /etc/apache2/ports.conf
 
 RUN echo "ServerName localhost" | tee /etc/apache2/conf-available/fqdn.conf
