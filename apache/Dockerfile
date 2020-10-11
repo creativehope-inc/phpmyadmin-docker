@@ -1,5 +1,13 @@
 FROM php:7.4-apache
 
+COPY ./sites-available-000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY ./ports.conf /etc/apache2/ports.conf
+
+RUN echo "ServerName localhost" | tee /etc/apache2/conf-available/fqdn.conf
+RUN a2enconf fqdn
+
+COPY ./config.secret.inc.php /etc/phpmyadmin/config.secret.inc.php
+
 # Install dependencies
 RUN set -ex; \
     \
@@ -40,9 +48,7 @@ RUN set -ex; \
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
-RUN set -ex; \
-    \
-    { \
+RUN { \
         echo 'opcache.memory_consumption=128'; \
         echo 'opcache.interned_strings_buffer=8'; \
         echo 'opcache.max_accelerated_files=4000'; \
@@ -62,53 +68,40 @@ RUN set -ex; \
     } > $PHP_INI_DIR/conf.d/phpmyadmin-misc.ini
 
 # Calculate download URL
-ENV VERSION 5.0.3
-ENV SHA256 da689973b114c3957c386846a0cb8a9da33bc33ef90ab007cc130f4e5dd3ec8c
+ENV VERSION 5.0.1
 ENV URL https://files.phpmyadmin.net/phpMyAdmin/${VERSION}/phpMyAdmin-${VERSION}-all-languages.tar.xz
-
-LABEL org.opencontainers.image.title="Official phpMyAdmin Docker image" \
-    org.opencontainers.image.description="Run phpMyAdmin with Alpine, Apache and PHP FPM." \
-    org.opencontainers.image.authors="The phpMyAdmin Team <developers@phpmyadmin.net>" \
-    org.opencontainers.image.vendor="phpMyAdmin" \
-    org.opencontainers.image.documentation="https://github.com/phpmyadmin/docker#readme" \
-    org.opencontainers.image.licenses="GPL-2.0-only" \
-    org.opencontainers.image.version="${VERSION}" \
-    org.opencontainers.image.url="https://github.com/phpmyadmin/docker#readme" \
-    org.opencontainers.image.source="https://github.com/phpmyadmin/docker.git"
+LABEL version=$VERSION
 
 # Download tarball, verify it using gpg and extract
 RUN set -ex; \
-    \
-    savedAptMark="$(apt-mark showmanual)"; \
-    \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
+    fetchDeps=" \
         gnupg \
         dirmngr \
-    ; \
+    "; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends $fetchDeps; \
     \
     export GNUPGHOME="$(mktemp -d)"; \
     export GPGKEY="3D06A59ECE730EB71B511C17CE752F178259BD92"; \
-    curl -fsSL -o phpMyAdmin.tar.xz $URL; \
-    curl -fsSL -o phpMyAdmin.tar.xz.asc $URL.asc; \
-    echo "$SHA256 *phpMyAdmin.tar.xz" | sha256sum -c -; \
+    curl --output phpMyAdmin.tar.xz --location $URL; \
+    curl --output phpMyAdmin.tar.xz.asc --location $URL.asc; \
     gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPGKEY" \
         || gpg --batch --keyserver ipv4.pool.sks-keyservers.net --recv-keys "$GPGKEY" \
         || gpg --batch --keyserver keys.gnupg.net --recv-keys "$GPGKEY" \
         || gpg --batch --keyserver pgp.mit.edu --recv-keys "$GPGKEY" \
         || gpg --batch --keyserver keyserver.pgp.com --recv-keys "$GPGKEY"; \
     gpg --batch --verify phpMyAdmin.tar.xz.asc phpMyAdmin.tar.xz; \
-    tar -xf phpMyAdmin.tar.xz -C /var/www/html --strip-components=1; \
-    mkdir -p /var/www/html/tmp; \
-    chown www-data:www-data /var/www/html/tmp; \
+    tar -xf phpMyAdmin.tar.xz -C /usr/src; \
     gpgconf --kill all; \
     rm -r "$GNUPGHOME" phpMyAdmin.tar.xz phpMyAdmin.tar.xz.asc; \
-    rm -rf /var/www/html/setup/ /var/www/html/examples/ /var/www/html/test/ /var/www/html/po/ /var/www/html/composer.json /var/www/html/RELEASE-DATE-$VERSION; \
-    sed -i "s@define('CONFIG_DIR'.*@define('CONFIG_DIR', '/etc/phpmyadmin/');@" /var/www/html/libraries/vendor_config.php; \
+    mv /usr/src/phpMyAdmin-$VERSION-all-languages /usr/src/phpmyadmin; \
+    rm -rf /usr/src/phpmyadmin/setup/ /usr/src/phpmyadmin/examples/ /usr/src/phpmyadmin/test/ /usr/src/phpmyadmin/po/ /usr/src/phpmyadmin/composer.json /usr/src/phpmyadmin/RELEASE-DATE-$VERSION; \
+    sed -i "s@define('CONFIG_DIR'.*@define('CONFIG_DIR', '/etc/phpmyadmin/');@" /usr/src/phpmyadmin/libraries/vendor_config.php; \
+# Add directory for sessions to allow session persistence
+    mkdir /sessions; \
+    mkdir -p /var/nginx/client_body_temp; \
     \
-    apt-mark auto '.*' > /dev/null; \
-    apt-mark manual $savedAptMark; \
-    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $fetchDeps; \
     rm -rf /var/lib/apt/lists/*
 
 # Copy configuration
@@ -116,6 +109,8 @@ COPY config.inc.php /etc/phpmyadmin/config.inc.php
 
 # Copy main script
 COPY docker-entrypoint.sh /docker-entrypoint.sh
+
+EXPOSE 8080
 
 ENTRYPOINT [ "/docker-entrypoint.sh" ]
 CMD ["apache2-foreground"]

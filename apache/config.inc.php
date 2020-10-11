@@ -1,4 +1,5 @@
 <?php
+$cfg['blowfish_secret'] = '4vasevIAAYyxqqavw0RAEIV9veuKZ1pG';
 
 require('/etc/phpmyadmin/config.secret.inc.php');
 
