@@ -57,6 +57,6 @@ jobs:
           --region "$RUN_REGION" \
           --image "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA" \
           --platform "managed" \
-          --allow-unauthenticated
+          --allow-unauthenticated \
           --set-env-vars=[PMA_HOST=/cloudsql/$PROJECT_ID:$RUN_REGION:$INSTANCE_ID,PMA_SOCKET=/cloudsql/$PROJECT_ID:$RUN_REGION:$INSTANCE_ID]
           
