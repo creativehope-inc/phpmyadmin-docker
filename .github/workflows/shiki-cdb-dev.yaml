@@ -56,3 +56,4 @@ jobs:
           --platform "managed" \
           --allow-unauthenticated
           --set-env-vars=[PMA_HOST=/cloudsql/$PROJECT_ID:$RUN_REGION:$INSTANCE_ID,PMA_SOCKET=/cloudsql/$PROJECT_ID:$RUN_REGION:$INSTANCE_ID]
+          
