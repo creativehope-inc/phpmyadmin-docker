@@ -6,6 +6,7 @@ COPY ./ports.conf /etc/apache2/ports.conf
 RUN echo "ServerName localhost" | tee /etc/apache2/conf-available/fqdn.conf
 RUN a2enconf fqdn
 
+COPY ./php-ini/php.ini /usr/local/etc/php/conf.d/
 COPY ./config.secret.inc.php /etc/phpmyadmin/config.secret.inc.php
 
 # Install dependencies
