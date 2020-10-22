@@ -131,6 +131,11 @@ $i--;
 $cfg['UploadDir'] = '';
 $cfg['SaveDir'] = '';
 
+$cfg['MaxNavigationItems'] = 100;
+$cfg['MaxTableList'] = 100;
+
+$cfg['LoginCookieValidity'] = 28800;
+
 /* Include User Defined Settings Hook */
 if (file_exists('/etc/phpmyadmin/config.user.inc.php')) {
     include('/etc/phpmyadmin/config.user.inc.php');
