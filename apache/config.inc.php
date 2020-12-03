@@ -134,7 +134,7 @@ $cfg['SaveDir'] = '';
 $cfg['MaxNavigationItems'] = 100;
 $cfg['MaxTableList'] = 100;
 
-$cfg['LoginCookieValidity'] = 28800;
+$cfg['LoginCookieValidity'] = 345600;
 
 /* Include User Defined Settings Hook */
 if (file_exists('/etc/phpmyadmin/config.user.inc.php')) {
